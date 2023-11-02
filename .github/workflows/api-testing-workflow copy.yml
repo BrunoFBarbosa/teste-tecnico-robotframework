@@ -1,0 +1,48 @@
+name: api-tests
+run-name: On Push - API Tests Run
+on: [push]
+
+jobs:
+  api-test:
+    runs-on: ubuntu-20.04
+    permissions: write-all
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install Node.js 19.1
+        uses: actions/setup-node@v3
+        with:
+          node-version: '19.1'
+      
+      - name: Install Requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U -r requirements.txt
+          sudo npm install @playwright/test
+          sudo npx playwright install-deps
+          rfbrowser init
+      
+      - name: Run API Tests
+        run: |
+          robot -d ./results -i api tests
+      
+      - name: Upload Tests Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: results-api
+          path: ./results
+          if-no-files-found: ignore
+          retention-days: 2
+      
+      - name: Download Tests Results
+        if: always()
+        uses: actions/download-artifact@v1
+        with:
+          name: results-api
